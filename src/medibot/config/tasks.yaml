@@ -7,9 +7,35 @@ general_practitioner_task:
 #    Ask the patient more questions if needed to find about their current health, pain.
 #    Consider if an appointment with a doctor is urgently needed or the patient can rest at home.
   expected_output: >
-    You must respond with a dictionary of extracted information in the following format: ['interview_summary':  which is the detailed summary of the patient's input, 'diagnoses': which are the diagnoses based on your medical knowledge]
+    You must respond with a dictionary of extracted information in the following format: ['interview_summary':  which is the detailed summary of the patient's input, 'diagnoses': which are the diagnoses based on your medical knowledge, 'doctor_checkup_needed':boolean (wheather further doctor checkup required or not)]
     The response should contain ONLY the dictionary.
-#    Comprehensive message to the patient, which includes diagnoses and advices, and also whether the patient to see the doctor urgently.
+    Comprehensive message to the patient, which includes diagnoses and advices, and also whether the patient to see the doctor urgently.
+
+appointment_scheduling_task:
+  description: >
+    Your task is to interact with patients to schedule their appointments efficiently. 
+    You must gather all necessary details, such as the preferred date and time, 
+    Use AvailableSlot tool to suggest a date and time from the returning event list
+    Remember which position datetime the user choose take that position item from event_names list and input to BookSlot tool to book in google calender
+    the reason for the appointment, and any specific requirements or constraints the patient may have. 
+    Simultaneously, you need to ensure the appointment aligns with the healthcare provider's availability, 
+    avoiding conflicts and optimizing the schedule.
+
+    This task requires you to be empathetic, organized, and clear in your communication, 
+    guiding the patient to find the best possible time while respecting their preferences.
+  expected_output: >
+    The result of this task should be a confirmed appointment that includes the following details:
+    
+    - Patient Information: Name, contact details, and any relevant identification.
+    - Appointment Date and Time: Clearly specified and agreed upon.
+    - Reason for Appointment: A brief note on why the patient is visiting 
+      (e.g., consultation, follow-up, specific procedure).
+    - Special Notes: Any additional information, such as accessibility needs, 
+      interpreter requirements, or specific doctor preferences.
+    - Confirmation: A final confirmation message or email sent to the patient 
+      summarizing the appointment details.
+
+    This ensures clarity and preparedness for both the patient and the healthcare provider.
 
 personal_info_collector:
   description: >

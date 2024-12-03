@@ -5,6 +5,18 @@ import base64
 import time
 from ultralytics import YOLO
 import math
+from typing import List
+
+##calender API Imports
+import datetime
+import os.path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+##
 
 class HumanTool(BaseTool):
     name: str = "Human interact"
@@ -17,18 +29,118 @@ class HumanTool(BaseTool):
         res = input(f"{argument} \n")
         return res
 
-class AppointmentTool(BaseTool):
-    name: str = "Human interaction for futher procedure"
+class AvailableSlot(BaseTool):
+    name: str = "Available Slot"
     description: str = (
-        """Ask the user the best time for an appointment with a doctors.
+        """This function returns available slots
         """
     )
+    def list_of_upcoming_events(self) -> List:
+        SCOPES = ["https://www.googleapis.com/auth/calendar"]
+        creds = None
+        if os.path.exists("src/medibot/tools/token.json"):
+            print("path found")
+            creds = Credentials.from_authorized_user_file("src/medibot/tools/token.json")
+        else:
+            print("path not found")
+        try:
+            print("Hellooooo3 caalllllllllllllllleeeeeeeeeeeeeeeender",creds)
+            service = build("calendar", "v3", credentials=creds)
 
-    def _run(self, argument: str = '', string: str = '') -> str:
+            # Call the Calendar API
+            now = datetime.datetime.now().isoformat() + "Z"  # 'Z' indicates UTC time
+            print("Getting the upcoming 10 events")
+            events_result = (
+                service.events()
+                .list(
+                    calendarId="primary",
+                    timeMin=now,
+                    maxResults=10,
+                    singleEvents=True,
+                    orderBy="startTime",
+                )
+                .execute()
+            )
+            events = events_result.get("items", [])
+
+            if not events:
+                print("No upcoming events found.")
+                return []
+            event_names = []
+            event_times = []                 
+            for event in events:
+                # event_names.append(event['summary'])
+                start = event["start"].get("dateTime", event["start"].get("date"))
+                if event['summary'] =="Available":
+                    event_times.append(start)
+                    event_names.append(event['id'])
+                print(start, len(event['id']))
+            # Prints the start and name of the next 10 events
+            return event_times, event_names
+        except HttpError as error:
+            print("An error occured:", error)
+            return []
+        
+    def _run(self) -> str:
         print("########")
-        if string: print(string)
-        if argument: res = input(f"{argument} \n")
+        res, event_names = self.list_of_upcoming_events()
+        return res,event_names
+
+
+class BookSlot(BaseTool):
+    name: str = "Book Slot"
+    description: str = (
+        """This function books slot in calendar
+        """
+    )
+    def book_slot(self,event_id) -> List:
+        SCOPES = ["https://www.googleapis.com/auth/calendar"]
+        creds = None
+        if os.path.exists("src/medibot/tools/token.json"):
+            print("path found")
+            creds = Credentials.from_authorized_user_file("src/medibot/tools/token.json")
+        else:
+            print("Path Not Found")
+        try:
+            service = build("calendar", "v3", credentials=creds)
+            print("-----------event_id------------",event_id)
+            event_id = str(event_id)
+            calendar_id = 'primary'  # Default is the primary calendar
+
+            # Fetch the current event details
+            event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+
+            # Modify event details
+            event['summary'] = 'Booked'
+            updated_event = service.events().update(
+                calendarId=calendar_id,
+                eventId=event_id,
+                body=event
+            ).execute()
+            return True
+            
+        except HttpError as error:
+            print("An error occured:", error)
+            return False
+        
+    def _run(self, event_id) -> bool:
+        print("########")
+        res = self.book_slot(event_id)
         return res
+        
+
+# class AppointmentTool(BaseTool):
+#     name: str = "Human interaction for futher procedure"
+#     description: str = (
+#         """Ask the user the best time for an appointment with a doctors.
+#         """
+#     )
+
+#     def _run(self, argument: str = '', string: str = '') -> str:
+#         print("########")
+#         if string: print(string)
+#         if argument: res = input(f"{argument} \n")
+#         return res
 
 # Function to encode the image
 def encode_image(image_path):
